@@ -38,7 +38,7 @@ class AdminBackendTest extends TestCase {
    'description'=>'Catalog image test',
    'image'=>UploadedFile::fake()->image('relic.jpg',640,480),
   ])->assertRedirect(route('admin.items.index'));
-  $item=DB::table('items')->where('unit_code','IMG-001')->first();
+  $item=DB::table('items')->where('name','The Illustrated Relic')->first();
   $this->assertNotNull($item);
   $this->assertNotEmpty($item->image_path);
   Storage::disk('public')->assertExists($item->image_path);
