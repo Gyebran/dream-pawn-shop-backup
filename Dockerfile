@@ -38,6 +38,9 @@ WORKDIR /var/www/html
 COPY --from=vendor --chown=www-data:www-data /app /var/www/html
 COPY --from=frontend --chown=www-data:www-data /app/public/build /var/www/html/public/build
 
+# Fail the image build if Vite assets were not copied into Laravel's public directory.
+RUN test -f /var/www/html/public/build/manifest.json
+
 RUN mkdir -p \
         storage/framework/cache \
         storage/framework/sessions \
