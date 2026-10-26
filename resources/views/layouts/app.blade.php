@@ -11,12 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
-    <!-- Styles & Scripts -->
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @else
-        <link rel="stylesheet" href="/build/assets/app.css">
-    @endif
+    <!-- Vite production manifest is generated during the Docker build. -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
         .font-serif-dream { font-family: 'Cinzel', Georgia, serif; }
