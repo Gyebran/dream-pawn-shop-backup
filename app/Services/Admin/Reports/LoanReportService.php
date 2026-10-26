@@ -1,0 +1,10 @@
+<?php
+namespace App\Services\Admin\Reports;
+use App\Models\Loans\LoanRequest;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+class LoanReportService {
+ public function paginate(array $f){return $this->query($f)->with(['member:id,name,email','details.item','details.fine','reviewer:id,name','returnConfirmer:id,name'])->orderByDesc('requested_at')->paginate(50)->withQueryString();}
+ public function forPrint(array $f){return $this->query($f)->with(['member:id,name,email','details.item','details.fine','reviewer:id,name','returnConfirmer:id,name'])->orderByDesc('requested_at')->get();}
+ public function exportCsv(array $f):StreamedResponse{return response()->streamDownload(function()use($f){$out=fopen('php://output','w');fputcsv($out,['Request ID','Member','Email','Unit Code','Item','Status','Requested At','Reviewed At','Handed Over At','Due At','Returned At','Fine Amount','Fine Status']);$this->query($f)->with(['member:id,name,email','details.item','details.fine'])->orderBy('id')->chunkById(100,function($loans)use($out){foreach($loans as $l)foreach($l->details as $d)fputcsv($out,[$l->id,$l->member?->name,$l->member?->email,$d->item?->unit_code,$d->item?->name,$l->status,$l->requested_at?->toIso8601String(),$l->reviewed_at?->toIso8601String(),$l->handed_over_at?->toIso8601String(),$l->due_at?->toIso8601String(),$l->returned_at?->toIso8601String(),$d->fine?->amount??0,$d->fine?->status??'none']);});fclose($out);},'dream-pawn-shop-loan-report.csv',['Content-Type'=>'text/csv; charset=UTF-8']);}
+ private function query(array $f){return LoanRequest::query()->when(isset($f['status']),fn($q)=>$q->where('status',$f['status']))->when(isset($f['member_id']),fn($q)=>$q->where('member_id',$f['member_id']))->when(isset($f['from']),fn($q)=>$q->whereDate('requested_at','>=',$f['from']))->when(isset($f['to']),fn($q)=>$q->whereDate('requested_at','<=',$f['to']));}
+}

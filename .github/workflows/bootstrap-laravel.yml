@@ -1,0 +1,56 @@
+name: Bootstrap Laravel application
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql, pgsql, xml, curl, zip, bcmath, intl, gd
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Create Laravel project
+        run: |
+          composer create-project laravel/laravel /tmp/dream-pawn-laravel
+          rsync -a --exclude='.git' --exclude='.env' /tmp/dream-pawn-laravel/ ./
+          test -f .env.example
+          test ! -f .env
+
+      - name: Configure PostgreSQL defaults in example environment
+        run: |
+          php -r '$p = ".env.example"; $s = file_get_contents($p); $s = preg_replace("/^DB_CONNECTION=.*/m", "DB_CONNECTION=pgsql", $s); $s = preg_replace("/^DB_HOST=.*/m", "DB_HOST=127.0.0.1", $s); $s = preg_replace("/^DB_PORT=.*/m", "DB_PORT=5432", $s); $s = preg_replace("/^DB_DATABASE=.*/m", "DB_DATABASE=dream_pawn_shop", $s); $s = preg_replace("/^DB_USERNAME=.*/m", "DB_USERNAME=postgres", $s); $s = preg_replace("/^DB_PASSWORD=.*/m", "DB_PASSWORD=", $s); file_put_contents($p, $s);'
+          grep -q '^DB_CONNECTION=pgsql$' .env.example
+
+      - name: Build frontend assets
+        run: |
+          npm install
+          npm run build
+
+      - name: Commit Laravel scaffold
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: bootstrap Laravel with PostgreSQL and Blade"
+            git push origin HEAD:main
+          fi
